@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
+</head>
+<body style="margin:0; background: #220000;">
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800, height: 600,
+            physics: { default: 'arcade', arcade: { gravity: { y: 300 } } }, // Mars Low Gravity
+            scene: { preload: preload, create: create, update: update }
+        };
+
+        let player, platforms, cursors, levelText, currentLevel = 1;
+        const game = new Phaser.Game(config);
+
+        function preload() {
+            // Placeholder visuals
+            this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
+            this.load.image('star', 'https://labs.phaser.io/assets/demoscene/star3.png');
+            this.load.image('dude', 'https://labs.phaser.io/assets/sprites/phaser-dude.png');
+        }
+
+        function create() {
+            // Mars Sky
+            this.cameras.main.setBackgroundColor('#8b4513');
+
+            platforms = this.physics.add.staticGroup();
+            generateLevel(this);
+
+            player = this.physics.add.sprite(100, 450, 'dude');
+            player.setBounce(0.2);
+            player.setCollideWorldBounds(true);
+
+            this.physics.add.collider(player, platforms);
+            cursors = this.input.keyboard.createCursorKeys();
+
+            levelText = this.add.text(16, 16, 'Level: ' + currentLevel + ' / 100', { fontSize: '32px', fill: '#fff' });
+        }
+
+        function generateLevel(scene) {
+            platforms.clear(true, true);
+            // Floor
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+            
+            // Generate random platforms based on level number
+            for (let i = 0; i < 5; i++) {
+                let x = Phaser.Math.Between(200, 700);
+                let y = Phaser.Math.Between(150, 450);
+                platforms.create(x, y, 'ground');
+            }
+
+            // Goal (Star)
+            let goal = scene.physics.add.image(750, 100, 'star');
+            scene.physics.add.overlap(player, goal, () => {
+                currentLevel++;
+                if(currentLevel <= 100) {
+                    goal.destroy();
+                    levelText.setText('Level: ' + currentLevel + ' / 100');
+                    player.setPosition(100, 450);
+                    generateLevel(scene);
+                } else {
+                    alert("YOU CONQUERED MARS!");
+                }
+            }, null, scene);
+        }
+
+        function update() {
+            if (cursors.left.isDown) player.setVelocityX(-160);
+            else if (cursors.right.isDown) player.setVelocityX(160);
+            else player.setVelocityX(0);
+
+            if (cursors.up.isDown && player.body.touching.down) player.setVelocityY(-330);
+        }
+    </script>
+</body>
+</html>
